@@ -1,0 +1,54 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>IR</title>
+
+
+</head>
+
+<body>
+    <form method="POST">
+        {% csrf_token %}
+          {{ form }}
+        <div align="center">
+        Please input here...<input type="text" name="input">
+        <button type="submit" name="parse">
+            <span>
+              Read and Parse
+            </span>
+        </button>
+        <button type="submit" name="search">
+            <span>
+              Search
+            </span>
+        </button>
+
+    </div><br><br>
+    </form>
+    
+    <div>File : {% for f in file%} {{f}} /{%endfor%}</div><br>
+    <div>Char : {% for c in ch%} {{c}} /{%endfor%}</div><br>
+    <div>Word : {% for w in wo%} {{w}} /{%endfor%}</div><br>
+    <div>Sentence : {% for s in se%} {{s}} {%endfor%}</div><br>
+    <div>Sentence by model : {% for s in se_m%} {{s}} {%endfor%}</div><br>
+    {% for n, ty, sen in tupList %}
+    <div>Find in : {{n}} </div><br>
+    <div>Type : {{ty}} </div><br>
+        {% for s in sen %}
+        <div>Text : {{s}} </div><br>
+        {% endfor %}
+    {% endfor %}
+
+
+</body>
+
+</html>

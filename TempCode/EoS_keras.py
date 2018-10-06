@@ -38,10 +38,10 @@ for i in range(len(train_sentence)):
     label.append(1)
 neg = [0,1,4,5,30,31,32,33,34,50,51,52,53,54,55,56,57,58,59,60,61,62,100,101,103,104,129,130,131,132,133,161,162,163,165,166,174,175
                ,187,188,189,190,201,202,209,210,216,217,266,267,290,294,297,383,384,463,464,466,467,468,469,470,471,472,542,544,546,548,550
-               ,622,623,680,681,682,731,732,733,734,735,736,737,738,740,741,828,829,830,831,833,834,856,857]
+               ,622,623,680,681,682,731,732,733,734,735,736,737,738,740,741,828,829,830,831,833,834,856,857,1001,1002]
 for i in neg:
     label[i] = 0
-print(label)
+print("label : ",label)
 
 x_train = []
 print("Start for changing")
@@ -83,12 +83,16 @@ model = Sequential()
 model.add(Embedding(output_dim=32,
                    input_dim=1000,
                    input_length=50))
-model.add(Dropout(0.5))
-model.add(Dense(units=256,activation='relu'))
+model.add(Dropout(0.35))
+#model.add(Dense(units=256,activation='relu'))
 #model.add(SimpleRNN(units=16)) #32*16 + 16 +16*16
-model.add(LSTM(units=16)) #4 * (RNN number)
-model.add(Dense(units=256,activation='relu')) 
-model.add(Dropout(0.5))
+model.add(LSTM(units=32)) #4 * (RNN number)
+model.add(Dense(units=256,activation='relu'))
+model.add(Dropout(0.35))
+model.add(Dense(units=64,activation='relu'))
+model.add(Dropout(0.35))
+model.add(Dense(units=16,activation='relu')) 
+model.add(Dropout(0.35))
 model.add(Dense(units=1,activation='sigmoid'))
 
 model.summary()
@@ -100,9 +104,9 @@ model.compile(loss='binary_crossentropy',
 """## train model"""
 
 train_history = model.fit(input_x_train , label , batch_size=10 ,
-                          epochs=10 , verbose=2,
-                          validation_split=0.2)
-
+                          epochs=50 , verbose=2,
+                          validation_split=0.5)
+model.save('eos_model.h5')
 
 #"The children look cachectic with a prematurely aged face. There are different types of the syndrome" 1
 #"Cockayne syndrome, first described in 193"6 by Dr" 0
@@ -148,3 +152,5 @@ for i in range(len(input_x_test)):
 
 scores = model.evaluate(input_x_train, label, verbose=1)
 print(scores[1])
+
+
