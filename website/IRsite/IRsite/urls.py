@@ -15,11 +15,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.conf.urls import url
-from django.urls import path
+from django.urls import path, re_path
 from fulltextSearch import views
 
 urlpatterns = [
-	url(r'^$', views.index),
-	path(r'^index', views.index),
+	re_path('^$', views.index),
+	#path(r'^index', views.index),
     path('admin/', admin.site.urls),
 ]

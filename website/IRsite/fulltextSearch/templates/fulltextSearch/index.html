@@ -16,10 +16,16 @@
 </head>
 
 <body>
-    <form method="POST">
-        {% csrf_token %}
-          {{ form }}
-        <div align="center">
+ <form method="post" enctype="multipart/form-data" action="">
+    {% csrf_token %}
+    {{ form }}
+    <div>
+        <span>Choose which file to upload...</span>
+        <input type="file" name="myfile">
+        <button type="submit" name="upload">Upload</button>
+    {{ tttt }}
+    </div>
+        
         Please input here...<input type="text" name="input">
         <button type="submit" name="parse">
             <span>

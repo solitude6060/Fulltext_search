@@ -1,26 +1,50 @@
 from django.shortcuts import render
 from .models import Word
+from .forms import UploadFileForm
+from django.http import HttpResponseRedirect
+from django.contrib.staticfiles.templatetags.staticfiles import static
+from django.conf import settings#PROJECT_ROOT
+
+#from .upload_file import handle_uploaded_file
+
 import re
 import os
 import string
 import xml.etree.cElementTree as ET
 import json
 import ast
-from django.contrib.staticfiles.templatetags.staticfiles import static
-from django.conf import settings#PROJECT_ROOT
-#from keras.preprocessing import sequence
+
 import spacy
+#from keras.preprocessing import sequence
 #from keras.models import load_model
+
 word_dic = spacy.load('en')
 word_index = {'SPACE': 19, 'ADP':1, 'ADV':2, 'AUX':3, 'CONJ':4, 'CCONJ':5, 'DET':6, 'INTJ':7, 'NUM':8, 'PART':9, 'PRON':10,
-              'PROPN':11, 'PUNCT':12, 'SCONJ':13, 'SYM':14, 'VERB':15, 'NOUN':16, 'X':17, 'ADJ': 18 }
+			'PROPN':11, 'PUNCT':12, 'SCONJ':13, 'SYM':14, 'VERB':15, 'NOUN':16, 'X':17, 'ADJ': 18 }
+
+def handle_uploaded_file(f):
+	p = '/Users/Solitude6060/Google_iir/Course/107_1/IR/HW1/website/IRsite/IRsite/data/'
+	with open(p+'t.txt', 'wb+') as destination:
+		for chunk in f.chunks():
+			destination.write(chunk)
+
+def upload_file(request):
+	form = UploadFileForm(request.POST, request.FILES)
+	if form.is_valid():
+		handle_uploaded_file(request.FILES['file'], request.FILES['filename'].name)
+		return HttpResponse("OK!")
+			#return HttpResponseRedirect('/success/url/')
+
+	return render(request, 'index.html', {'form': form})
+
 
 def change(text):
-    result = []
-    doc = word_dic(text)
-    for i in range(len(doc)):
-        result += [doc[i].pos_]
-    return result
+	result = []
+	doc = word_dic(text)
+	for i in range(len(doc)):
+		result += [doc[i].pos_]
+	return result
+
 '''
 def predict(xlist):
 	model = load_model(settings.PROJECT_ROOT+'/data/eos_model.h5')
@@ -43,11 +67,11 @@ def predict(xlist):
 			count += 1
 	return int(count*0.9)
 '''
+
 def XmlParser(path):
 	tree = ET.ElementTree(file=path)
 	title = ''
 	text = ''
-
 	for elem in tree.iter(tag='ArticleTitle'):
 		title += elem.text
 
@@ -148,7 +172,17 @@ def read_all():
 
 
 def index(request):
+	if 'upload' in request.POST:
+		tttt = "testupload"
+		dirpath = settings.PROJECT_ROOT+"/data/"
+		fname = request.FILES['myfile'].name
+		filepath = dirpath+fname
+		with open(filepath, 'wb+') as destination:
+			for chunk in request.FILES['myfile'].chunks():
+				destination.write(chunk)
+		destination.close()
 	if 'parse' in request.POST:
+		tttt = "read and parse"
 		read_all()
 	if 'search' in request.POST:
 		target = request.POST.get('input')
@@ -160,7 +194,7 @@ def index(request):
 		xtitle = ""
 		xtext = ""
 		jtext = ""
-
+		
 		xti = []
 		xte = []
 		jte = []

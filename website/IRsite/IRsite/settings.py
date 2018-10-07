@@ -79,10 +79,10 @@ WSGI_APPLICATION = 'IRsite.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'word',#'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-        'USER': 'cyma',
-        'PASSWORD': 'gxw20520Solitude',
-        'HOST': '140.116.247.161',
+        'NAME': 'word',
+        'USER': 'root',#'cyma',
+        'PASSWORD': 'gxw20520',#'gxw20520Solitude',
+        'HOST': '127.0.0.1',#'140.116.247.161',
         'PORT': '3306',
     }
 }
