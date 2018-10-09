@@ -1,9 +1,12 @@
 from django.shortcuts import render
+from django.shortcuts import render_to_response
 from .models import Word
 from .forms import UploadFileForm
 from django.http import HttpResponseRedirect
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.conf import settings#PROJECT_ROOT
+from django.urls import reverse
+from django.utils.safestring import mark_safe
 
 #from .upload_file import handle_uploaded_file
 
@@ -83,8 +86,8 @@ def XmlParser(path):
 def jsonParser(path):
 	jfile = open(path,'r',encoding='ISO-8859-1')
 	jstr = jfile.read()
-
 	jdata = json.loads(jstr)
+	#jdata = str(jdata)
 
 	jtext = ''
 	for text in jdata:
@@ -118,8 +121,11 @@ def w_to_s(t):
 		for w in tList:
 			if w not in w2s.keys():
 				w2s[w] = [i]
+				w2s[w] = list(set(w2s[w]))
 			else:
 				w2s[w].append(i)
+				w2s[w] = list(set(w2s[w]))
+	
 	#print(w2s)
 	return(w2s)
 
@@ -142,6 +148,7 @@ def read_all():
 	for fi in file_list:
 		#fi = str(fi)
 		n, t = os.path.splitext(fi)
+		file_name = n.replace(path,"")
 		#fname.append(n)
 		ftype.append(t)
 		
@@ -151,14 +158,14 @@ def read_all():
 			
 			xti = w_to_s(xtitle)
 			for w,s in xti.items():
-				if not Word.objects.filter(word=w, sentence=s, style="ArticleTitle", type=t, name=n).exists():
-					word_db_xti = Word.objects.create(word=w, sentence=s, style="ArticleTitle", type=t, name=n)
+				if not Word.objects.filter(word=w, sentence=s, style="ArticleTitle", type=t, name=file_name).exists():
+					word_db_xti = Word.objects.create(word=w, sentence=s, style="ArticleTitle", type=t, name=file_name)
 					word_db_xti.save()
 
 			xte = w_to_s(xtext)
 			for w,s in xte.items():
-				if not Word.objects.filter(word=w, sentence=s, style="ArticleText", type=t, name=n).exists():
-					word_db_xte = Word.objects.create(word=w, sentence=s, style="ArticleText", type=t, name=n)
+				if not Word.objects.filter(word=w, sentence=s, style="ArticleText", type=t, name=file_name).exists():
+					word_db_xte = Word.objects.create(word=w, sentence=s, style="ArticleText", type=t, name=file_name)
 					word_db_xte.save()
 		elif t == '.json':
 			jtext = jsonParser(fi)
@@ -166,14 +173,14 @@ def read_all():
 			jte = w_to_s(jtext)
 
 			for w,s in jte.items():
-				if not Word.objects.filter(word=w, sentence=s, style="Text", type=t, name=n).exists():
-					word_db_jte = Word.objects.create(word=w, sentence=s, style="Text", type=t, name=n)
+				if not Word.objects.filter(word=w, sentence=s, style="Text", type=t, name=file_name).exists():
+					word_db_jte = Word.objects.create(word=w, sentence=s, style="Text", type=t, name=file_name)
 					word_db_jte.save()
 
 
 def index(request):
 	if 'upload' in request.POST:
-		tttt = "testupload"
+		tttt = "upload success!"
 		dirpath = settings.PROJECT_ROOT+"/data/"
 		fname = request.FILES['myfile'].name
 		filepath = dirpath+fname
@@ -182,13 +189,14 @@ def index(request):
 				destination.write(chunk)
 		destination.close()
 	if 'parse' in request.POST:
-		tttt = "read and parse"
 		read_all()
+
 	if 'search' in request.POST:
 		target = request.POST.get('input')
 		path = settings.PROJECT_ROOT+"/data/"
 		file_list = []
 		file = []
+		file_notemp = []
 		fname = []
 		ftype = []
 		xtitle = ""
@@ -204,6 +212,9 @@ def index(request):
 		se_m = []
 		for f in os.listdir(path):
 			file += [f]
+			splname, spltext = os.path.splitext(f)
+			if spltext == '.xml' or spltext == '.json':
+	 			file_notemp.append(f)
 
 		for f in os.listdir(path):
 			file_list +=[path+f]
@@ -212,6 +223,7 @@ def index(request):
 		for fi in file_list:
 			n, t = os.path.splitext(fi)
 			ftype.append(t)
+			
 
 			if t == '.xml':
 				xtitle, xtext =  XmlParser(fi)
@@ -227,7 +239,8 @@ def index(request):
 				wo.append(countWord(tokenize(jtext)))
 				se.append(int(countWord(split_s(jtext))*0.9))
 				#se_m.append(predict(split_s(jtext)))
-
+		statistic_list = zip(file_notemp, ch, wo, se)
+		'''
 		#n, ty, front, word, back in tupList
 		#tupList = [("n","ty",[("s","ss","sss"),("s","ss","sss"),("s","ss","sss")])]
 		sen_obj = Word.objects.filter(word=target)
@@ -239,6 +252,7 @@ def index(request):
 		tup = ()
 		name_list = []
 		type_list = []
+		style_list = []
 		for i in sen_obj:
 			sen_list = ast.literal_eval(i.sentence)
 			name_list.append(i.name)
@@ -246,63 +260,135 @@ def index(request):
 			tupLi_tu += (i.name,)
 			tupLi_tu += (i.type,)  
 			if i.type == '.xml':
-				xti, xte = XmlParser(i.name+i.type)
+				xti, xte = XmlParser(path+i.name+i.type)
 				xte = xte.encode('ISO-8859-1',"ignore")
 				sp_list = split_s(xte)
 				for i in sen_list:
-					'''
+					
+					####################
 					s_w_sp = sp_list[i].split(target)
 					for i in range(len(s_w_sp)):
 						tup += (s_w_sp[i],)
 						if i != len(s_w_sp)-1:
 							tup += (target,)
 					tupLi.append(tup)
-					'''
+					####################
+					
 					tt = ""
 					if str(sp_list[i]) not in tupLi:
 						s_w_sp = sp_list[i].split(target)
 						for i in range(len(s_w_sp)):
 							tt += s_w_sp[i]
 							if i != len(s_w_sp)-1:
-								tt+= "###"+target+"###"
-						tupLi.append(tt)
+								tt+= "<span style='background-color: #FFFF00'>"+target+"</span>"
+						tupLi.append(mark_safe(tt))
 			#elif i.type == '.DS_Store':
 				#a = 'a'
 			elif i.type == '.json':
-				jt = jsonParser(i.name+i.type)
+				jt = jsonParser(path+i.name+i.type)
 				jt = jt.encode('ISO-8859-1',"ignore")
 				sp_list = split_s(jt)
 				for i in sen_list:
-					'''
+					
+					################
 					s_w_sp = sp_list[i].split(target)
 					for i in range(len(s_w_sp)):
 						tup += (s_w_sp[i],)
 						if i != len(s_w_sp)-1:
 							tup += (target,)
 					tupLi.append(tup)
-					<!--{% for front, word, back in sen %}
-        <div>Text : {{front}}<font color="blue"> {{word}} </font>{{back}}</div><br>
-        {% endfor %}
-        -->
-					'''
+					
+					##################
+					
 					tt = ""
 					if str(sp_list[i]) not in tupLi:
 						s_w_sp = sp_list[i].split(target)
 						for i in range(len(s_w_sp)):
 							tt += s_w_sp[i]
 							if i != len(s_w_sp)-1:
-								tt+= "###"+target+"###"
-						tupLi.append(tt)
+								tt+= "<span style='background-color: #FFFF00'>"+target+"</span>"
+						tupLi.append(make_safe(tt))
 
 			tupLi_tu += (tupLi,)
 			tupList.append(tupLi_tu)
 			tupLi_tu = ()
 			tupLi = []
 			tup = ()
+			'''
+	if 'search_all' in request.POST:
+		target = request.POST.get('input')
+		path = settings.PROJECT_ROOT+"/data/"
+		key = request.POST.get('input')
+		returnText_list = []
+		return_list = {}
 
-
+		word_obj = Word.objects.filter(word=target)
+		word_tuple_list = []
+		word_in_file = []
+		word_in_sentence = []
+		word_type_list = []
+		word_style_list = []
+		word_all_list = []
+		for word_item in word_obj:
+			which_style = word_item.style
+			word_style_list.append(which_style)
+			which_art = word_item.name
+			which_type = word_item.type
+			word_type_list.append(which_type)
+			which_sentence = word_item.sentence
+			if which_art+which_type+which_style not in word_all_list:
+				word_in_file.append(which_art+which_type)
+				word_all_list.append(which_art+which_type+which_style)
+			word_in_sentence.append(which_sentence)
+			word_tuple_list.append((which_art, which_type, which_style, which_sentence))
+		
+		#word_all_file = list(set(word_all_file))
+		for i in range(len(word_in_file)):
+			returnText = ""
+			file = word_in_file[i]
+			t = word_type_list[i]
+			if t == '.xml':
+				w_in_title, w_in_text = XmlParser(path+file)
+				if word_style_list[i] == 'ArticleTitle':
+					atitle_text = w_in_title.split(target)
+					for i in range(len(atitle_text)):
+						returnText += atitle_text[i]
+						if i != len(atitle_text)-1:
+							returnText+= "<span style='background-color: #FFFF00'>"+target+"</span>"
+					returnText_list.append(mark_safe(returnText))
+				elif word_style_list[i] == 'ArticleText':
+					atext_text = w_in_text.split(target)
+					for i in range(len(atext_text)):
+						returnText += atext_text[i]
+						if i != len(atext_text)-1:
+							returnText+= "<span style='background-color: #FFFF00'>"+target+"</span>"
+					returnText_list.append(mark_safe(returnText))
+			elif t == '.json':
+				w_in_json = jsonParser(path+file)
+				json_text = w_in_json.split(target)
+				for i in range(len(json_text)):
+					returnText += json_text[i]
+					if i != len(json_text)-1:
+						returnText += "<span style='background-color: #FFFF00'>"+target+"</span>"
+				returnText_list.append(mark_safe(returnText))
+		
+		return_list = zip(word_in_file, returnText_list)
 	return render(request, 'fulltextSearch/index.html', locals())
 
+def upload(request):
+	if 'upload' in request.POST:
+		tttt = "upload success!"
+		dirpath = settings.PROJECT_ROOT+"/data/"
+		fname = request.FILES['myfile'].name
+		filepath = dirpath+fname
+		with open(filepath, 'wb+') as destination:
+			for chunk in request.FILES['myfile'].chunks():
+				destination.write(chunk)
+		destination.close()
+		#return render_to_response('fulltextSearch/index.html', locals())
+		return HttpResponseRedirect('index',locals())
+	
+	return render(request, 'fulltextSearch/upload.html', locals())
 
 
 

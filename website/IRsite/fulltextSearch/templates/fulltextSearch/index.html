@@ -9,23 +9,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
     <meta name="author" content="">
+    <link href="static/css/search.css" rel="stylesheet">
+    
+    <link href="static/css/table.css" rel="stylesheet">
+    
 
-    <title>IR</title>
+    <title>IR FullTextSearch</title>
 
 
 </head>
 
 <body>
+<form class="form-wrapper" method="post" enctype="multipart/form-data" action="">
+    {% csrf_token %}
+    {{ form }}
+    <input type="text" id="search" placeholder="Search for..." name="input" >
+    <input type="submit" value="Search" name="search_all">
+    <input type="submit" value="Read and Parse" name="parse">
+    <input type="submit" value="Calcualte" name="search"><br>
+    <span>Choose File... </span>
+    <input type="file"  name="myfile" multiple>
+    <button type="submit"  name="upload">Upload</button>
+</form>
+
+
+<!--
  <form method="post" enctype="multipart/form-data" action="">
     {% csrf_token %}
     {{ form }}
-    <div>
-        <span>Choose which file to upload...</span>
-        <input type="file" name="myfile">
-        <button type="submit" name="upload">Upload</button>
-    {{ tttt }}
-    </div>
-        
+    <div align='center'>
         Please input here...<input type="text" name="input">
         <button type="submit" name="parse">
             <span>
@@ -37,24 +49,77 @@
               Search
             </span>
         </button>
+        <button type="submit"  name="search_all">Search2</button><br>
+        
 
     </div><br><br>
-    </form>
-    
-    <div>File : {% for f in file%} {{f}} /{%endfor%}</div><br>
+    </form>-->
+    <section>
+  <!--for demo wrap-->
+  <h1>Statistic Table</h1>
+  <div class="tbl-header">
+    <table cellpadding="0" cellspacing="0" border="0">
+      <thead>
+        <tr>
+          <th>File</th>
+          <th>Char</th>
+          <th>Word</th>
+          <th>Sentence</th>
+        </tr>
+      </thead>
+    </table>
+  </div>
+  <div class="tbl-content">
+    <table cellpadding="0" cellspacing="0" border="0">
+      <tbody>
+          {% for f, c, w, s in statistic_list%}
+        <tr>
+          <td>{{f}}</td>
+          <td>{{c}} </td>
+          <td>{{w}}</td>
+          <td>{{s}}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+
+######################################################
+<div align="center">
+    {% for name, text in return_list %}
+    <div><h1> in file : {{name}}</h1></div><br>
+    <area<h2>Whole text : {{text}}</h2></area><br><br>
+    {% endfor %}
+</div>
+
+#####################################################
+    <!--<div>File : {% for f in file_notemp%} {{f}} /{%endfor%}</div><br>
     <div>Char : {% for c in ch%} {{c}} /{%endfor%}</div><br>
     <div>Word : {% for w in wo%} {{w}} /{%endfor%}</div><br>
-    <div>Sentence : {% for s in se%} {{s}} {%endfor%}</div><br>
-    <div>Sentence by model : {% for s in se_m%} {{s}} {%endfor%}</div><br>
+    <div>Sentence : {% for s in se%} {{s}} {%endfor%}</div><br>-->
+    <!--<div>Sentence by model : {% for s in se_m%} {{s}} {%endfor%}</div><br>-->
+    <!--
     {% for n, ty, sen in tupList %}
     <div>Find in : {{n}} </div><br>
     <div>Type : {{ty}} </div><br>
         {% for s in sen %}
         <div>Text : {{s}} </div><br>
         {% endfor %}
-    {% endfor %}
+    {% endfor %}-->
 
+    
 
+<script src="static/js/table.js"></script>
 </body>
 
 </html>
+
+<!--
+<div class="made-with-love">
+  Made with
+  <i>♥</i> by
+  <a target="_blank" href="https://codepen.io/nikhil8krishnan">Nikhil Krishnan</a>
+</div>-->

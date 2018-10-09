@@ -19,7 +19,11 @@ from django.urls import path, re_path
 from fulltextSearch import views
 
 urlpatterns = [
-	re_path('^$', views.index),
-	#path(r'^index', views.index),
+    #url(r'^$', views.index),
+    #url(r'^index', views.index),
+    #url(r'^upload', views.upload),
+    re_path('^$', views.upload),
+    re_path(r'^upload', views.upload),
+    re_path(r'^index', views.index),
     path('admin/', admin.site.urls),
 ]
