@@ -26,10 +26,12 @@
     <input type="text" id="search" placeholder="Search for..." name="input" >
     <input type="submit" value="Search" name="search_all">
     <input type="submit" value="Read and Parse" name="parse">
-    <input type="submit" value="Calcualte" name="search"><br>
+    <input type="submit" value="Calcualte" name="search">
+    <button onclick="location.href='/chart'" type="button">Zipf Chart</button><br>
     <span>Choose File... </span>
     <input type="file"  name="myfile" multiple>
     <button type="submit"  name="upload">Upload</button>
+    
 </form>
 
 
@@ -88,6 +90,13 @@
 
 
 ######################################################
+<div align="center">
+  <h2>
+  {% for s in stemWord_list %}
+    {{s}}
+  {% endfor %}
+  </h2>
+</div>
 <div align="center">
     {% for name, text in return_list %}
     <div><h1> in file : {{name}}</h1></div><br>

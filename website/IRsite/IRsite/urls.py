@@ -22,8 +22,11 @@ urlpatterns = [
     #url(r'^$', views.index),
     #url(r'^index', views.index),
     #url(r'^upload', views.upload),
-    re_path('^$', views.upload),
+    re_path('^$', views.index),
     re_path(r'^upload', views.upload),
     re_path(r'^index', views.index),
+    re_path(r'^xml', views.Zipf_xml),
+    re_path(r'^json', views.Zipf_json),
+    re_path(r'^chart', views.chart),
     path('admin/', admin.site.urls),
 ]

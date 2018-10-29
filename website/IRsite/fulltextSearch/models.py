@@ -18,3 +18,13 @@ class Word(models.Model):
     class Meta:
         managed = False
         db_table = 'word'
+
+class Word_frequency(models.Model):
+    word = models.CharField(max_length=100, blank=True, null=True)
+    frequency = models.IntegerField(blank=True, null=True)
+    file_name = models.CharField(max_length=100, blank=True, null=True)
+    file_type = models.CharField(max_length=100, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'word_frequency'

@@ -1,0 +1,53 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html>
+    
+<head>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+        google.charts.load('current', {packages: ['corechart', 'line']});
+google.charts.setOnLoadCallback(drawBasic);
+
+function drawBasic() {
+
+      var data = new google.visualization.DataTable();
+      data.addColumn('number', 'X');
+      data.addColumn('number', "Words' frequency");
+      data.addColumn({type:'string', role:'annotation'});
+      data.addColumn({type:'string', role:'annotationText'});
+
+      data.addRows([//[Id, freq, strID, Word]
+        {% for wid, freq, strId, word in chart_list %}
+            [{{wid}}, {{freq}},'{{strId}}','{{word}}'],
+        {% endfor %}
+        ]);
+
+      var options = {
+        chart: {
+          title: "Zip's Law",
+          subtitle: 'Ebola in {{subtitle}}'
+        },
+        width: 3600,
+        height: 1300,
+        hAxis: {
+            title:'Words'
+          //ticks: [{v:32, f:'thirty two'}, {v:64, f:'sixty four'}]
+        },
+        vAxis: {
+          title: 'Frequency'
+        }
+      };
+
+      var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+
+      chart.draw(data, options);
+    }
+  </script>
+  <link href="{% static 'css/search.css' %}" rel="stylesheet">
+</head>
+<body>
+    <div align="center"><h1>Zip's Law</h1></div>
+    <div align="center"><h2>Ebola in {{subtitle}}</h2></div>
+    <div id="chart_div"></div>
+</body>
+</html>

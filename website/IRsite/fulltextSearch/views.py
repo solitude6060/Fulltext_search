@@ -1,12 +1,15 @@
 from django.shortcuts import render
 from django.shortcuts import render_to_response
-from .models import Word
+from .models import Word, Word_frequency
 from .forms import UploadFileForm
 from django.http import HttpResponseRedirect
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.conf import settings#PROJECT_ROOT
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk.stem.porter import PorterStemmer
+from django.db.models import Q
 
 #from .upload_file import handle_uploaded_file
 
@@ -71,15 +74,32 @@ def predict(xlist):
 	return int(count*0.9)
 '''
 
+def apply(f, *args, **kw):
+	return f(*args, **kw)
+
+
+def minEditDist(sm,sn):
+	m,n = len(sm),len(sn)
+	D = list(map(lambda y: list(map(lambda x,y : y if x==0 else x if y==0 else 0,range(n+1),[y]*(n+1))), range(m+1)))
+	for i in range(1,m+1):
+		for j in range(1,n+1):
+			D[i][j] = min( D[i-1][j]+1, D[i][j-1]+1, D[i-1][j-1] + apply(lambda: 0 if sm[i-1] == sn[j-1] else 2)) 
+	for i in range(0,m+1):
+		print(D[i])
+	
+	return D[m][n]
+
 def XmlParser(path):
 	tree = ET.ElementTree(file=path)
 	title = ''
 	text = ''
 	for elem in tree.iter(tag='ArticleTitle'):
-		title += elem.text
+		if isinstance(elem.text, str):
+			title += elem.text
 
 	for elem in tree.iter(tag='AbstractText'):
-		text += elem.text
+		if isinstance(elem.text, str):
+			text += elem.text
 
 	return title, text
 
@@ -321,26 +341,71 @@ def index(request):
 		key = request.POST.get('input')
 		returnText_list = []
 		return_list = {}
+		minDis = 1000000000
+		minWord = ""
+		stemWord_list = []
 
 		word_obj = Word.objects.filter(word=target)
-		word_tuple_list = []
-		word_in_file = []
-		word_in_sentence = []
-		word_type_list = []
-		word_style_list = []
-		word_all_list = []
-		for word_item in word_obj:
-			which_style = word_item.style
-			word_style_list.append(which_style)
-			which_art = word_item.name
-			which_type = word_item.type
-			word_type_list.append(which_type)
-			which_sentence = word_item.sentence
-			if which_art+which_type+which_style not in word_all_list:
-				word_in_file.append(which_art+which_type)
-				word_all_list.append(which_art+which_type+which_style)
-			word_in_sentence.append(which_sentence)
-			word_tuple_list.append((which_art, which_type, which_style, which_sentence))
+		if not word_obj.exists():
+			print("no match")
+			all_word_obj = Word.objects.all()
+			for word in all_word_obj:
+				tempDis = minEditDist(target, word.word)
+				if tempDis < minDis:
+					minDis = tempDis
+					minWord = word.word
+			target = minWord
+			for word in all_word_obj:
+				if PorterStemmer().stem(word.word.lower()) == PorterStemmer().stem(target.lower()):
+					if word.word not in stemWord_list:
+						stemWord_list.append(word.word)
+						print(word.word)
+			word_obj = Word.objects.filter(word=target)
+			word_tuple_list = []
+			word_in_file = []
+			word_in_sentence = []
+			word_type_list = []
+			word_style_list = []
+			word_all_list = []
+			for word_item in word_obj:
+				which_style = word_item.style
+				word_style_list.append(which_style)
+				which_art = word_item.name
+				which_type = word_item.type
+				word_type_list.append(which_type)
+				which_sentence = word_item.sentence
+				if which_art+which_type+which_style not in word_all_list:
+					word_in_file.append(which_art+which_type)
+					word_all_list.append(which_art+which_type+which_style)
+				word_in_sentence.append(which_sentence)
+				word_tuple_list.append((which_art, which_type, which_style, which_sentence))
+		else:
+			all_word_obj = Word.objects.all()
+			for word in all_word_obj:
+				if PorterStemmer().stem(word.word.lower()) == PorterStemmer().stem(target.lower()):
+					if word.word not in stemWord_list:
+						stemWord_list.append(word.word)
+						print(word.word)
+
+			word_obj = Word.objects.filter(word__in=stemWord_list)
+			word_tuple_list = []
+			word_in_file = []
+			word_in_sentence = []
+			word_type_list = []
+			word_style_list = []
+			word_all_list = []
+			for word_item in word_obj:
+				which_style = word_item.style
+				word_style_list.append(which_style)
+				which_art = word_item.name
+				which_type = word_item.type
+				word_type_list.append(which_type)
+				which_sentence = word_item.sentence
+				if which_art+which_type+which_style not in word_all_list:
+					word_in_file.append(which_art+which_type)
+					word_all_list.append(which_art+which_type+which_style)
+				word_in_sentence.append(which_sentence)
+				word_tuple_list.append((which_art, which_type, which_style, which_sentence))
 		
 		#word_all_file = list(set(word_all_file))
 		for i in range(len(word_in_file)):
@@ -390,9 +455,77 @@ def upload(request):
 	
 	return render(request, 'fulltextSearch/upload.html', locals())
 
+def Zipf_xml(request):
+	subtitle = "Pubmed"
+	wordCount_dist = {}
+	count = 0
+	all_xml_query = Word_frequency.objects.filter(file_type='.xml')
+	chart_list = []
+	for text in all_xml_query:
+		wordCount_dist[text.word] = text.frequency
+	
+	wordCount_dist = sorted(wordCount_dist.items(), key=lambda d: d[1], reverse=True)
+	
+	for word in wordCount_dist:
+		count += 1
+		chart_list.append((count, word[1], str(count), word[0]))
+	
+	chart_list = chart_list[0:150]
+	
+	return render(request, 'fulltextSearch/Zipf.html', locals())
 
+def Zipf_json(request):
+	subtitle = "Twitter"
+	wordCount_dist = {}
+	count = 0
+	all_json_query = Word_frequency.objects.filter(file_type='.json')
+	chart_list = []
+	for text in all_json_query:
+		wordCount_dist[text.word] = text.frequency
+	
+	wordCount_dist = sorted(wordCount_dist.items(), key=lambda d: d[1], reverse=True)
+	
+	for word in wordCount_dist:
+		count += 1
+		chart_list.append((count, word[1], str(count), word[0]))
+	
+	chart_list = chart_list[0:150]
+	
+	return render(request, 'fulltextSearch/Zipf.html', locals())
 
+def chart(request):
+	wordCount_dist = {}
+	count = 0
+	xml_list = []
+	json_list = []
+	chart_list = []
+	count = 0
+	all_json_query = Word_frequency.objects.filter(file_type='.json')
+	
+	for text in all_json_query:
+		wordCount_dist[text.word] = text.frequency
+	
+	wordCount_dist = sorted(wordCount_dist.items(), key=lambda d: d[1], reverse=True)
+	
+	for word in wordCount_dist:
+		count += 1
+		chart_list.append((count, word[1]))
+	
+	json_list = chart_list
+	wordCount_dist = {}
+	chart_list = []
+	count = 0
 
+	all_xml_query = Word_frequency.objects.filter(file_type='.xml')
+	for text in all_xml_query:
+		wordCount_dist[text.word] = text.frequency
+	
+	wordCount_dist = sorted(wordCount_dist.items(), key=lambda d: d[1], reverse=True)
+	
+	for word in wordCount_dist:
+		count += 1
+		chart_list.append((count, word[1]))
 
+	xml_list = chart_list[0:600]
 
-
+	return render(request, 'fulltextSearch/chart.html', locals())

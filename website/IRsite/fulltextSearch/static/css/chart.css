@@ -1,0 +1,15 @@
+#DIV1{
+width:45%;
+line-height:500px;
+padding:20px;
+border:2px blue solid;　
+float:left;
+}
+
+#DIV2{
+width:45%;
+line-height:500px;
+padding:20px;
+border:2px green solid;
+float:left;
+}
