@@ -345,7 +345,7 @@ def index(request):
 		minWord = ""
 		stemWord_list = []
 
-		word_obj = Word.objects.filter(word=target)
+		word_obj = Word.objects.filter(word__contains=target)
 		if not word_obj.exists():
 			print("no match")
 			all_word_obj = Word.objects.all()
@@ -355,6 +355,7 @@ def index(request):
 					minDis = tempDis
 					minWord = word.word
 			target = minWord
+			print("change to ",target)
 			for word in all_word_obj:
 				if PorterStemmer().stem(word.word.lower()) == PorterStemmer().stem(target.lower()):
 					if word.word not in stemWord_list:
@@ -380,6 +381,7 @@ def index(request):
 				word_in_sentence.append(which_sentence)
 				word_tuple_list.append((which_art, which_type, which_style, which_sentence))
 		else:
+			print("match")
 			all_word_obj = Word.objects.all()
 			for word in all_word_obj:
 				if PorterStemmer().stem(word.word.lower()) == PorterStemmer().stem(target.lower()):
@@ -409,6 +411,7 @@ def index(request):
 		
 		#word_all_file = list(set(word_all_file))
 		for i in range(len(word_in_file)):
+			print("split", target)
 			returnText = ""
 			file = word_in_file[i]
 			t = word_type_list[i]
