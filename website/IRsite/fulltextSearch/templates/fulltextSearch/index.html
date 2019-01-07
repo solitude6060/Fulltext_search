@@ -27,6 +27,7 @@
     <input type="submit" value="Search" name="search_all">
     <input type="submit" value="Read and Parse" name="parse">
     <input type="submit" value="Calcualte" name="search">
+    <input type="submit" value="TFIDF" name="tfidf">
     <button onclick="location.href='/chart'" type="button">Zipf Chart</button><br>
     <span>Choose File... </span>
     <input type="file"  name="myfile" multiple>
@@ -58,15 +59,16 @@
     </form>-->
     <section>
   <!--for demo wrap-->
-  <h1>Statistic Table</h1>
+  <h1>TFIDF Table</h1>
   <div class="tbl-header">
     <table cellpadding="0" cellspacing="0" border="0">
       <thead>
         <tr>
-          <th>File</th>
-          <th>Char</th>
           <th>Word</th>
-          <th>Sentence</th>
+          <th>TFIDF</th>
+          <th>Word</th>
+          <th>TFIDF with Shannon information content</th>
+          <!--<th>Sentence</th>-->
         </tr>
       </thead>
     </table>
@@ -74,12 +76,13 @@
   <div class="tbl-content">
     <table cellpadding="0" cellspacing="0" border="0">
       <tbody>
-          {% for f, c, w, s in statistic_list%}
+          {% for w1, t, w2, s in statistic_list%}
         <tr>
-          <td>{{f}}</td>
-          <td>{{c}} </td>
-          <td>{{w}}</td>
+          <td>{{w1}}</td>
+          <td>{{t}} </td>
+          <td>{{w2}}</td>
           <td>{{s}}</td>
+          <!--<td>{{s}}</td>-->
         </tr>
         {% endfor %}
       </tbody>
@@ -89,7 +92,6 @@
 
 
 
-######################################################
 <div align="center">
   <h2>
   {% for s in stemWord_list %}
@@ -104,7 +106,6 @@
     {% endfor %}
 </div>
 
-#####################################################
     <!--<div>File : {% for f in file_notemp%} {{f}} /{%endfor%}</div><br>
     <div>Char : {% for c in ch%} {{c}} /{%endfor%}</div><br>
     <div>Word : {% for w in wo%} {{w}} /{%endfor%}</div><br>

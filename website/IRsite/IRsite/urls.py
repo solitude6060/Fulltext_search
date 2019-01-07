@@ -28,5 +28,6 @@ urlpatterns = [
     re_path(r'^xml', views.Zipf_xml),
     re_path(r'^json', views.Zipf_json),
     re_path(r'^chart', views.chart),
+    re_path(r'^tfidf', views.chart),
     path('admin/', admin.site.urls),
 ]

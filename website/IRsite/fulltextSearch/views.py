@@ -10,6 +10,11 @@ from django.utils.safestring import mark_safe
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.stem.porter import PorterStemmer
 from django.db.models import Q
+from sklearn import feature_extraction
+from sklearn.feature_extraction.text import TfidfTransformer 
+from sklearn.feature_extraction.text import CountVectorizer
+import math
+
 
 #from .upload_file import handle_uploaded_file
 
@@ -20,11 +25,11 @@ import xml.etree.cElementTree as ET
 import json
 import ast
 
-import spacy
+#import spacy
 #from keras.preprocessing import sequence
 #from keras.models import load_model
 
-word_dic = spacy.load('en')
+#word_dic = spacy.load('en')
 word_index = {'SPACE': 19, 'ADP':1, 'ADV':2, 'AUX':3, 'CONJ':4, 'CCONJ':5, 'DET':6, 'INTJ':7, 'NUM':8, 'PART':9, 'PRON':10,
 			'PROPN':11, 'PUNCT':12, 'SCONJ':13, 'SYM':14, 'VERB':15, 'NOUN':16, 'X':17, 'ADJ': 18 }
 
@@ -197,8 +202,104 @@ def read_all():
 					word_db_jte = Word.objects.create(word=w, sentence=s, style="Text", type=t, name=file_name)
 					word_db_jte.save()
 
+def tfidf(art_num):
+	text_list = []
+	data_path = settings.PROJECT_ROOT+"/data/TFIDF/"
+	for f in os.listdir(data_path):
+		#print(f)
+		fname, ftype = os.path.splitext(f)
+		if ftype == ".txt":
+			file_path = data_path+f
+			text_file = open(file_path, "r")
+			text = text_file.read()
+			text_list.append(text)
+
+	vectorizer=CountVectorizer()
+	transformer=TfidfTransformer()
+	tfidf=transformer.fit_transform(vectorizer.fit_transform(text_list))
+	word=vectorizer.get_feature_names()
+	weight=tfidf.toarray()
+
+	article_list = []
+	word_dict = {}
+	word_count = 0
+	word_total_length = 0
+
+	new_article_list = []
+	new_word_dict = {}
+
+	#print(len(word))
+	for w in word:
+		word_total_length += len(w)
+	avg_word_len = word_total_length/len(word)
+
+	for i in range(len(weight)):
+		#print("-------輸出第",i+1,"類文本tf-idf權重------")
+			for j in range(len(word)):
+				word_dict.update({word[j]: weight[i][j]})
+				if weight[i][j] != 0:
+					new_word_dict.update({word[j]: math.log(weight[i][j]**-1)})
+				else:
+					new_word_dict.update({word[j]: weight[i][j]})
+			article_list.append(word_dict)
+			new_article_list.append(new_word_dict)
+			word_dict = {}
+			new_word_dict = {}
+	
+	#print(article_list[0])
+	count = 1
+	return_list = []
+	return_frq_list = []
+	for art in article_list:
+		#print("-------輸出第",count,"類文本前10個tf-idf權重------")
+		sort_word = [(k, art[k]) for k in sorted(art, key=art.get, reverse=True)]
+		if count == art_num:
+			return_list = sort_word
+		#print(sort_word[0][0])
+		#for key, value in sort_word[0:10]:
+			#print(key, value)
+		#print("###############################################")
+		#print("-------改良版第",count,"類文本前10個tf-idf權重------")
+		new_art = new_article_list[count-1]
+		new_sort_word = [(k, new_art[k]) for k in sorted(new_art, key=new_art.get, reverse=True)]
+		if count == art_num:
+			return_frq_list = new_sort_word
+		#for new_key, new_value in new_sort_word[0:10]:
+			#print(new_key, new_value)
+		#print("###############################################")
+		count += 1
+
+	return text_list, return_list, return_frq_list
 
 def index(request):
+	if 'tfidf' in request.POST:
+		print("TFIDF")
+		article_num = request.POST.get('input')
+		if article_num[0] != "#":
+			article_num = "#20"
+		if article_num[0] == "#":
+			art_num = int(article_num.replace("#",""))
+			print(art_num)
+			article_list, word_list, shannon_list = tfidf(art_num)
+			w_name_list = []
+			w_frq_list = []
+			s_name_list = []
+			s_frq_list = []
+			for key, value in word_list[0:20]:
+				w_name_list.append(key)
+				w_frq_list.append(value)
+			for key, value in shannon_list[0:20]:
+				s_name_list.append(key)
+				s_frq_list.append(value)
+			#print(w_name_list)
+			#print(article_num)
+			statistic_list = zip(w_name_list, w_frq_list, s_name_list, s_frq_list)
+			title_list = []
+			title_list.append(article_num)
+			content_list = []
+			content_list.append(article_list[art_num-1])
+			return_list = zip(title_list, content_list)
+			return render(request, 'fulltextSearch/index.html', locals())
 	if 'upload' in request.POST:
 		tttt = "upload success!"
 		dirpath = settings.PROJECT_ROOT+"/data/"
